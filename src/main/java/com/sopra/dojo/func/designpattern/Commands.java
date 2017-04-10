@@ -5,63 +5,28 @@ import java.util.List;
 
 public class Commands {
 
-    interface Command {
-        void run();
+    static Runnable logger(String message) {
+        return () -> System.out.println("Logging: " + message);
     }
 
-    static class Logger implements Command {
-        public final String message;
-
-        public Logger(String message) {
-            this.message = message;
-        }
-
-        @Override
-        public void run() {
-            System.out.println("Logging: " + message);
-        }
+    static Runnable fileSaver(String message) {
+        return () -> System.out.println("Saving: " + message);
     }
 
-    static class FileSaver implements Command {
-        public final String message;
-
-        public FileSaver(String message) {
-            this.message = message;
-        }
-
-        @Override
-        public void run() {
-            System.out.println("Saving: " + message);
-        }
+    static Runnable mailer(String message) {
+        return () -> System.out.println("Sending: " + message);
     }
 
-    static class Mailer implements Command {
-        public final String message;
-
-        public Mailer(String message) {
-            this.message = message;
-        }
-
-        @Override
-        public void run() {
-            System.out.println("Sending: " + message);
-        }
-    }
-
-    static class Executor {
-        public void execute(List<Command> tasks) {
-            for (Command task : tasks) {
-                task.run();
-            }
-        }
+    private static void execute(List<Runnable> tasks) {
+        tasks.forEach(Runnable::run);
     }
 
     public static void main(String[] args) {
-        List<Command> tasks = new ArrayList<>();
-        tasks.add(new Logger("Hi"));
-        tasks.add(new FileSaver("Cheers"));
-        tasks.add(new Mailer("Bye"));
-        new Executor().execute(tasks);
+        List<Runnable> tasks = new ArrayList<>();
+        tasks.add(logger("Hi"));
+        tasks.add(fileSaver("Cheers"));
+        tasks.add(mailer("Bye"));
+        execute(tasks);
     }
 
 
