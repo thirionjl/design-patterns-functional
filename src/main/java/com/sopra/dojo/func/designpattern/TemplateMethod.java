@@ -1,6 +1,7 @@
 package com.sopra.dojo.func.designpattern;
 
 import java.util.Random;
+import java.util.function.Consumer;
 
 public class TemplateMethod {
 
@@ -30,47 +31,18 @@ public class TemplateMethod {
         }
     }
 
-    static abstract class AbstractResourceManipulatorTemplate {
-        protected Resource resource;
-
-        private void openResource() {
-            resource = new Resource();
-        }
-
-        protected abstract void doSomethingWithResource();
-
-        private void closeResource() {
+    public static void withResource(Consumer<Resource> consumer) {
+        Resource resource = new Resource();
+        try {
+            consumer.accept(resource);
+        } finally {
             resource.dispose();
-            resource = null;
-        }
-
-        public void execute() {
-            openResource();
-            try {
-                doSomethingWithResource();
-            } finally {
-                closeResource();
-            }
-        }
-    }
-
-    static class ResourceUser extends AbstractResourceManipulatorTemplate {
-        @Override
-        protected void doSomethingWithResource() {
-            resource.useResource();
-        }
-    }
-
-    static class ResourceEmployer extends AbstractResourceManipulatorTemplate {
-        @Override
-        protected void doSomethingWithResource() {
-            resource.employResource();
         }
     }
 
     public static void main(String[] args) {
-        new ResourceUser().execute();
-        new ResourceEmployer().execute();
+        withResource(r -> r.useResource());
+        withResource(r -> r.employResource());
     }
 
 }
