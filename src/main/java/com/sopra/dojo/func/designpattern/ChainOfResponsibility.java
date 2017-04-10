@@ -1,5 +1,12 @@
 package com.sopra.dojo.func.designpattern;
 
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+
 public class ChainOfResponsibility {
 
     static class File {
@@ -27,71 +34,33 @@ public class ChainOfResponsibility {
         }
     }
 
-    interface FileParser {
-        String parse(File file);
+    interface Parsers {
 
-        void setNextParser(FileParser next);
-    }
+        static Function<File, Optional<String>> text() {
+            return f -> f.getType() == File.Type.TEXT ? of("Text file: " + f.getContent()) : empty();
+        }
 
-    static abstract class AbstractFileParser implements FileParser {
-        protected FileParser next;
+        static Function<File, Optional<String>> audio() {
+            return f -> f.getType() == File.Type.AUDIO ? of("Audio file: " + f.getContent()) : empty();
+        }
 
-        @Override
-        public void setNextParser(FileParser next) {
-            this.next = next;
+        static Function<File, Optional<String>> video() {
+            return f -> f.getType() == File.Type.VIDEO ? of("Video file: " + f.getContent()) : empty();
         }
     }
 
-    static class TextFileParser extends AbstractFileParser {
-        @Override
-        public String parse(File file) {
-            if (file.getType() == File.Type.TEXT) {
-                return "Text file: " + file.getContent();
-            } else if (next != null) {
-                return next.parse(file);
-            } else {
-                throw new RuntimeException("Unknown file: " + file);
-            }
-        }
-    }
-
-    static class AudioFileParser extends AbstractFileParser {
-        @Override
-        public String parse(File file) {
-            if (file.getType() == File.Type.AUDIO) {
-                return "Audio file: " + file.getContent();
-            } else if (next != null) {
-                return next.parse(file);
-            } else {
-                throw new RuntimeException("Unknown file: " + file);
-            }
-        }
-    }
-
-    static class VideoFileParser extends AbstractFileParser {
-        @Override
-        public String parse(File file) {
-            if (file.getType() == File.Type.VIDEO) {
-                return "Video file: " + file.getContent();
-            } else if (next != null) {
-                return next.parse(file);
-            } else {
-                throw new RuntimeException("Unknown file: " + file);
-            }
-        }
+    static String parse(File file) {
+        return Stream.of(Parsers.text(), Parsers.audio(), Parsers.video())
+                .map(fct -> fct.apply(file))
+                .filter(Optional::isPresent)
+                .findFirst()
+                .flatMap(Function.identity()) // flatten, join  !
+                .orElseThrow(() -> new RuntimeException("Unknown file: " + file));
     }
 
     public static void main(String[] args) {
-        FileParser textParser = new TextFileParser();
-        FileParser audioParser = new AudioFileParser();
-        FileParser videoParser = new VideoFileParser();
-
-        textParser.setNextParser(audioParser);
-        audioParser.setNextParser(videoParser);
-
         File file = new File(File.Type.AUDIO, "Dream Theater  - The Astonishing");
-        String result = textParser.parse(file);
-        System.out.println("RESULT: " + result);
+        System.out.println("RESULT: " + parse(file));
     }
 
 }
