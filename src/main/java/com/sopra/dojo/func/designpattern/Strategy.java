@@ -1,68 +1,56 @@
 package com.sopra.dojo.func.designpattern;
 
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
+
 public class Strategy {
 
-    interface TextFormatter {
-        boolean filter(String text);
-
-        String format(String text);
-    }
-
     static class TextEditor {
-        private final TextFormatter textFormatter;
+        final Predicate<String> predicateFilter;
+        final UnaryOperator<String> formatter;
 
-        public TextEditor(TextFormatter textFormatter) {
-            this.textFormatter = textFormatter;
+        TextEditor(Predicate<String> predicateFilter, UnaryOperator<String> formatter) {
+            this.predicateFilter = predicateFilter;
+            this.formatter = formatter;
         }
 
         public void publishText(String text) {
-            if (textFormatter.filter(text)) {
-                System.out.println(textFormatter.format(text));
+            if (predicateFilter.test(text)) {
+                System.out.println(formatter.apply(text));
             }
         }
     }
 
-    static class PlainTextFormatter implements TextFormatter {
-
-        @Override
-        public boolean filter(String text) {
-            return true;
+    static class TextFilters {
+        static Predicate<String> acceptAll() {
+            return (text) -> true;
         }
 
-        @Override
-        public String format(String text) {
-            return text;
-        }
-    }
-
-    static class ErrorTextFormatter implements TextFormatter {
-
-        @Override
-        public boolean filter(String text) {
-            return text.startsWith("ERROR");
+        static Predicate<String> onlyErrors() {
+            return (text) -> text.startsWith("ERROR");
         }
 
-        @Override
-        public String format(String text) {
-            return text.toUpperCase();
+        static Predicate<String> onlyShorterThan(int len) {
+            return (text) -> text.length() < len;
         }
     }
 
-    static class ShortTextFormatter implements TextFormatter {
-
-        @Override
-        public boolean filter(String text) {
-            return text.length() < 20;
+    static class TextFormats {
+        static UnaryOperator<String> noFormat() {
+            return UnaryOperator.identity();
         }
 
-        @Override
-        public String format(String text) {
-            return text.toLowerCase();
+        static UnaryOperator<String> upperCase() {
+            return String::toUpperCase;
+        }
+
+        static UnaryOperator<String> lowerCase() {
+            return String::toLowerCase;
         }
     }
 
     public static void main(String[] args) {
-        TextEditor textEditor = new TextEditor(new ErrorTextFormatter());
+        TextEditor textEditor = new TextEditor(TextFilters.onlyShorterThan(20), TextFormats.lowerCase());
         textEditor.publishText("ERROR - something bad happened");
         textEditor.publishText("DEBUG - I'm here");
     }
